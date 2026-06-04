@@ -52,8 +52,10 @@ python app.py
 ### V4
 - Added Source Attrititon (it will tell which PDF's are consulted for giving some info)
 
+### V4
+- Added MCQ generation 
+
 ### Upcoming
-- MCQ Generation
 - Research Assistant Mode
 
 ## Future Improvements

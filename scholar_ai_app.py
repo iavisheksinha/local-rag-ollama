@@ -9,7 +9,7 @@ from langchain_ollama import OllamaLLM
 # Page title
 st.title("ScholarAI")
 
-# Upload multiple PDFs
+# Upload PDFs
 uploaded_files = st.file_uploader(
     "Upload PDF(s)",
     type="pdf",
@@ -21,7 +21,7 @@ if uploaded_files:
     all_chunks = []
     all_metadatas = []
 
-    # Process each PDF separately
+    # Process PDFs
     for uploaded_file in uploaded_files:
 
         pdf_name = uploaded_file.name
@@ -55,7 +55,7 @@ if uploaded_files:
     st.write(f"Total PDFs uploaded: {len(uploaded_files)}")
     st.write(f"Total chunks created: {len(all_chunks)}")
 
-    # Create embeddings and vector DB
+    # Create Vector Store
     with st.spinner("Processing PDFs and creating embeddings..."):
 
         embedding = OllamaEmbeddings(
@@ -70,41 +70,44 @@ if uploaded_files:
 
     st.success("PDFs processed successfully!")
 
-    # Ask question
+    # Question box
     question = st.text_input(
         "Ask a question about the uploaded PDFs"
     )
 
+    # MCQ Button
+    generate_mcq = st.button(
+        "Generate 5 MCQs"
+    )
+
+    # ---------------------------
+    # QUESTION ANSWERING
+    # ---------------------------
+
     if question:
 
-        # Retrieve relevant chunks
         docs = vectorstore.similarity_search(
             question,
             k=5
         )
 
-        # Build context
         context = "\n".join(
             [doc.page_content for doc in docs]
         )
 
-        # Collect sources
         sources = set()
 
         for doc in docs:
             if "source" in doc.metadata:
                 sources.add(doc.metadata["source"])
 
-        # Debug view
         with st.expander("Retrieved Context"):
             st.write(context)
 
-        # Load LLM
         llm = OllamaLLM(
             model="llama3"
         )
 
-        # Prompt
         prompt = f"""
 Use the following context to answer the question.
 
@@ -115,16 +118,53 @@ Question:
 {question}
 """
 
-        # Generate response
         with st.spinner("Generating answer..."):
             response = llm.invoke(prompt)
 
-        # Display answer
         st.subheader("Answer")
         st.write(response)
 
-        # Display sources
         st.subheader("Sources")
 
         for source in sorted(sources):
             st.write(f"📄 {source}")
+
+    # ---------------------------
+    # MCQ GENERATION
+    # ---------------------------
+
+    if generate_mcq:
+
+        docs = vectorstore.similarity_search(
+            "Generate MCQs from this document",
+            k=5
+        )
+
+        context = "\n".join(
+            [doc.page_content for doc in docs]
+        )
+
+        llm = OllamaLLM(
+            model="llama3"
+        )
+
+        mcq_prompt = f"""
+You are an expert teacher.
+
+Using the context below, generate exactly 5 multiple-choice questions.
+
+Rules:
+- Each question must have 4 options
+- Label options A, B, C, D
+- Show the correct answer after each question
+- Use only information from the provided context
+
+Context:
+{context}
+"""
+
+        with st.spinner("Generating 5 MCQs..."):
+            mcqs = llm.invoke(mcq_prompt)
+
+        st.subheader("Generated MCQs")
+        st.write(mcqs)
