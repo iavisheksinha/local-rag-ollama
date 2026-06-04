@@ -28,9 +28,16 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Features
+
+- Upload one or more PDF documents
+- Local RAG using Ollama
+- Chroma vector database
+- Semantic search using embeddings
+- Streamlit web interface
+- Multi-document question answering
+
 ## Future Improvements
-- Streamlit UI
-- Multiple PDF support
 - Chat history
 - Better chunking
 - Vector database optimization
