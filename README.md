@@ -37,6 +37,23 @@ python app.py
 - Streamlit web interface
 - Multi-document question answering
 
+## Development Timeline
+
+### V1
+- Single PDF RAG
+- Ollama + ChromaDB
+
+### V2
+- Streamlit Web Interface
+
+### V3
+- Multi-PDF Support
+
+### Upcoming
+- Source Attribution
+- MCQ Generation
+- Research Assistant Mode
+
 ## Future Improvements
 - Chat history
 - Better chunking
