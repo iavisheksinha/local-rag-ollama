@@ -4,31 +4,32 @@ import pymupdf as fitz
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_ollama import OllamaEmbeddings
-from langchain_ollama import OllamaLLM 
+from langchain_ollama import OllamaLLM
 
 # Page title
 st.title("ScholarAI")
 
-# Upload PDF
-uploaded_file = st.file_uploader(
-    "Upload a PDF",
-    type="pdf"
+# Upload multiple PDFs
+uploaded_files = st.file_uploader(
+    "Upload PDF(s)",
+    type="pdf",
+    accept_multiple_files=True
 )
 
-if uploaded_file is not None:
+if uploaded_files:
 
-    # Save uploaded PDF temporarily
-    with open("temp.pdf", "wb") as f:
-        f.write(uploaded_file.read())
+    # Extract text from all PDFs
+    all_text = ""
 
-    # Read PDF
-    doc = fitz.open("temp.pdf")
+    for uploaded_file in uploaded_files:
 
-    # Extract text
-    text = ""
+        doc = fitz.open(
+            stream=uploaded_file.read(),
+            filetype="pdf"
+        )
 
-    for page in doc:
-        text += page.get_text()
+        for page in doc:
+            all_text += page.get_text() + "\n"
 
     # Split text into chunks
     splitter = RecursiveCharacterTextSplitter(
@@ -36,29 +37,28 @@ if uploaded_file is not None:
         chunk_overlap=100
     )
 
-    chunks = splitter.split_text(text)
+    chunks = splitter.split_text(all_text)
 
+    st.write(f"Total PDFs uploaded: {len(uploaded_files)}")
     st.write(f"Total chunks created: {len(chunks)}")
 
-    # Process embeddings + vector DB
-    with st.spinner("Processing PDF and creating embeddings..."):
+    # Create embeddings and vector DB
+    with st.spinner("Processing PDFs and creating embeddings..."):
 
-        # Embedding model
         embedding = OllamaEmbeddings(
             model="nomic-embed-text"
         )
 
-        # Create vector database
         vectorstore = Chroma.from_texts(
             chunks,
             embedding=embedding
         )
 
-    st.success("PDF processed successfully!")
+    st.success("PDFs processed successfully!")
 
-    # User question
+    # Ask question
     question = st.text_input(
-        "Ask a question about the PDF"
+        "Ask a question about the uploaded PDFs"
     )
 
     if question:
@@ -69,12 +69,12 @@ if uploaded_file is not None:
             k=5
         )
 
-        # Combine retrieved chunks
+        # Build context
         context = "\n".join(
             [doc.page_content for doc in docs]
         )
 
-        # Debug retrieved context
+        # Debug view
         with st.expander("Retrieved Context"):
             st.write(context)
 
@@ -85,14 +85,14 @@ if uploaded_file is not None:
 
         # Prompt
         prompt = f"""
-        Use the following context to answer the question.
+Use the following context to answer the question.
 
-        Context:
-        {context}
+Context:
+{context}
 
-        Question:
-        {question}
-        """
+Question:
+{question}
+"""
 
         # Generate response
         with st.spinner("Generating answer..."):
