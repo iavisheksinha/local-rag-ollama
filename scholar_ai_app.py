@@ -18,29 +18,42 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
 
-    # Extract text from all PDFs
-    all_text = ""
+    all_chunks = []
+    all_metadatas = []
 
+    # Process each PDF separately
     for uploaded_file in uploaded_files:
+
+        pdf_name = uploaded_file.name
 
         doc = fitz.open(
             stream=uploaded_file.read(),
             filetype="pdf"
         )
 
+        text = ""
+
         for page in doc:
-            all_text += page.get_text() + "\n"
+            text += page.get_text()
 
-    # Split text into chunks
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100
-    )
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100
+        )
 
-    chunks = splitter.split_text(all_text)
+        chunks = splitter.split_text(text)
+
+        for chunk in chunks:
+            all_chunks.append(chunk)
+
+            all_metadatas.append(
+                {
+                    "source": pdf_name
+                }
+            )
 
     st.write(f"Total PDFs uploaded: {len(uploaded_files)}")
-    st.write(f"Total chunks created: {len(chunks)}")
+    st.write(f"Total chunks created: {len(all_chunks)}")
 
     # Create embeddings and vector DB
     with st.spinner("Processing PDFs and creating embeddings..."):
@@ -50,8 +63,9 @@ if uploaded_files:
         )
 
         vectorstore = Chroma.from_texts(
-            chunks,
-            embedding=embedding
+            texts=all_chunks,
+            embedding=embedding,
+            metadatas=all_metadatas
         )
 
     st.success("PDFs processed successfully!")
@@ -73,6 +87,13 @@ if uploaded_files:
         context = "\n".join(
             [doc.page_content for doc in docs]
         )
+
+        # Collect sources
+        sources = set()
+
+        for doc in docs:
+            if "source" in doc.metadata:
+                sources.add(doc.metadata["source"])
 
         # Debug view
         with st.expander("Retrieved Context"):
@@ -101,3 +122,9 @@ Question:
         # Display answer
         st.subheader("Answer")
         st.write(response)
+
+        # Display sources
+        st.subheader("Sources")
+
+        for source in sorted(sources):
+            st.write(f"📄 {source}")

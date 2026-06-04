@@ -49,8 +49,10 @@ python app.py
 ### V3
 - Multi-PDF Support
 
+### V4
+- Added Source Attrititon (it will tell which PDF's are consulted for giving some info)
+
 ### Upcoming
-- Source Attribution
 - MCQ Generation
 - Research Assistant Mode
 
