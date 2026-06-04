@@ -75,9 +75,13 @@ if uploaded_files:
         "Ask a question about the uploaded PDFs"
     )
 
-    # MCQ Button
+    # Buttons
     generate_mcq = st.button(
         "Generate 5 MCQs"
+    )
+
+    summarize_pdf = st.button(
+        "Generate Summary"
     )
 
     # ---------------------------
@@ -168,3 +172,46 @@ Context:
 
         st.subheader("Generated MCQs")
         st.write(mcqs)
+
+    # ---------------------------
+    # PDF SUMMARY
+    # ---------------------------
+
+    if summarize_pdf:
+
+        docs = vectorstore.similarity_search(
+            "Summarize this document",
+            k=10
+        )
+
+        context = "\n".join(
+            [doc.page_content for doc in docs]
+        )
+
+        llm = OllamaLLM(
+            model="llama3"
+        )
+
+        summary_prompt = f"""
+You are an expert academic assistant.
+
+Create a structured summary of the provided content.
+
+Use the following format:
+
+1. Overview
+2. Key Concepts
+3. Important Points
+4. Conclusion
+
+Keep the summary concise and easy to understand.
+
+Context:
+{context}
+"""
+
+        with st.spinner("Generating summary..."):
+            summary = llm.invoke(summary_prompt)
+
+        st.subheader("Document Summary")
+        st.write(summary)

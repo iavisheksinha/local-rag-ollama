@@ -55,6 +55,9 @@ python app.py
 ### V4
 - Added MCQ generation 
 
+### V5
+- Added PDF summarizer
+
 ### Upcoming
 - Research Assistant Mode
 
